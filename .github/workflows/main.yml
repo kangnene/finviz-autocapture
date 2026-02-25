@@ -8,30 +8,35 @@ on:
 
 jobs:
   capture:
-    runs-on: ubuntu-latest
+    # 최신 버전의 호환성 문제를 피하기 위해 안정적인 22.04 버전을 사용합니다.
+    runs-on: ubuntu-22.04
     permissions:
       contents: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: maven
 
+      - name: Build Project
+        run: mvn install -DskipTests
+
       - name: Install Playwright Browsers
+        # 시스템 의존성을 자동으로 해결하며 브라우저를 설치합니다.
         run: mvn exec:java -e -Dexec.mainClass="com.microsoft.playwright.CLI" -Dexec.args="install --with-deps chromium"
 
-      - name: Run Java Capture
-        run: mvn compile exec:java -Dexec.mainClass="FinvizCapture"
+      - name: Run Capture
+        run: mvn exec:java -Dexec.mainClass="FinvizCapture"
 
-      - name: Commit and Push Image
+      - name: Commit and Push
         run: |
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
           git add screenshots/*.jpg
-          git commit -m "Daily Finviz Map Captured: $(date +'%Y-%m-%d')" || exit 0
+          git commit -m "Daily Capture: $(date +'%Y-%m-%d')" || echo "No changes to commit"
           git push
