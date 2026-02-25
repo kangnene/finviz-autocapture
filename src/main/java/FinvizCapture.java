@@ -1,4 +1,5 @@
 import com.microsoft.playwright.*;
+import com.microsoft.playwright.options.ScreenshotType;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.io.File;
