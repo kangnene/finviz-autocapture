@@ -42,30 +42,34 @@ public class FinvizCapture {
             // 1️⃣ Finviz 캡쳐
             // ==============================
             System.out.println("Finviz 접속 중...");
-            page.navigate("https://finviz.com/map.ashx?t=sec");
-
-            page.waitForTimeout(5000);
-            page.mouse().move(500, 500);
-            page.waitForTimeout(1000);
-            page.mouse().wheel(0, 300);
-            page.waitForTimeout(9000);
-
-            // 마우스를 화면 밖으로 이동
-            page.mouse().move(-100, -100);
-            page.keyboard().press("Escape");
-            page.waitForTimeout(500);
-
-            // tooltip 강제 제거
-            page.addStyleTag(new Page.AddStyleTagOptions()
-                .setContent("*[class*='tooltip'], *[id*='tooltip'] { display: none !important; }"));
-
-            page.screenshot(new Page.ScreenshotOptions()
-                .setPath(Paths.get("screenshots/finviz.jpg"))
-                .setType(ScreenshotType.JPEG)
-                .setQuality(100)
-                .setFullPage(true));
-
-            System.out.println("Finviz 캡쳐 완료.");
+            try {
+                // 타임아웃을 60초로 늘리고, 페이지가 완전히 로드될 때까지 기다리지 않도록 옵션 추가
+                page.navigate("https://finviz.com/map.ashx?t=sec", new Page.NavigateOptions().setTimeout(60000));
+                
+                page.waitForTimeout(5000);
+                page.mouse().move(500, 500);
+                page.waitForTimeout(1000);
+                page.mouse().wheel(0, 300);
+                page.waitForTimeout(9000);
+    
+                // 마우스를 화면 밖으로 이동
+                page.mouse().move(-100, -100);
+                page.keyboard().press("Escape");
+                page.waitForTimeout(500);
+    
+                // tooltip 강제 제거
+                page.addStyleTag(new Page.AddStyleTagOptions()
+                    .setContent("*[class*='tooltip'], *[id*='tooltip'] { display: none !important; }"));
+    
+                page.screenshot(new Page.ScreenshotOptions()
+                    .setPath(Paths.get("screenshots/finviz.jpg"))
+                    .setType(ScreenshotType.JPEG)
+                    .setQuality(100)
+                    .setFullPage(true));
+                System.out.println("Finviz 캡쳐 완료.");
+            } catch (Exception e) {
+                System.out.println("Finviz 접속 실패(타임아웃), 하지만 계속 진행합니다.");
+            }
 
             // ==============================
             // 2️⃣ TradingView 캡쳐
