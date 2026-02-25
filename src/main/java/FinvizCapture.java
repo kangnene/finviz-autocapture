@@ -1,6 +1,5 @@
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.ScreenshotType;
-import com.microsoft.playwright.options.LoadState;   // ⭐ 이 줄 추가
 import java.nio.file.Paths;
 import java.io.File;
 import java.time.LocalDateTime;
@@ -24,17 +23,10 @@ public class FinvizCapture {
                 new Browser.NewContextOptions()
                     .setViewportSize(2560, 1440)
                     .setDeviceScaleFactor(2.0)
-                    .setUserAgent(
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
-                        "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-                    )
+                    .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/122.0")
             );
 
-            context.addInitScript("""
-                Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-                Object.defineProperty(navigator, 'languages', { get: () => ['en-US','en'] });
-                Object.defineProperty(navigator, 'plugins', { get: () => [1,2,3] });
-            """);
+            context.addInitScript("Object.defineProperty(navigator, 'webdriver', { get: () => undefined })");
 
             Page page = context.newPage();
             new File("screenshots").mkdirs();
@@ -42,25 +34,10 @@ public class FinvizCapture {
             // ================= FINVIZ =================
             System.out.println("Finviz 접속 중...");
             try {
-                page.navigate("https://finviz.com/map.ashx?t=sec",
-                        new Page.NavigateOptions()
-                                .setWaitUntil(LoadState.NETWORKIDLE)
-                                .setTimeout(60000));
+                page.navigate("https://finviz.com/map.ashx?t=sec");
 
-                page.waitForSelector("#map", new Page.WaitForSelectorOptions().setTimeout(30000));
-                page.waitForTimeout(5000);
-
-                page.mouse().move(500, 500);
-                page.waitForTimeout(1000);
-                page.mouse().wheel(0, 300);
-                page.waitForTimeout(9000);
-
-                page.mouse().move(-100, -100);
-                page.keyboard().press("Escape");
-                page.waitForTimeout(500);
-
-                page.addStyleTag(new Page.AddStyleTagOptions()
-                        .setContent("*[class*='tooltip'], *[id*='tooltip'] { display: none !important; }"));
+                // ⭐ 핵심: 요소 뜨면 바로 진행
+                page.waitForSelector("#map", new Page.WaitForSelectorOptions().setTimeout(15000));
 
                 page.screenshot(new Page.ScreenshotOptions()
                         .setPath(Paths.get(finvizFile))
@@ -68,36 +45,26 @@ public class FinvizCapture {
                         .setQuality(100)
                         .setFullPage(true));
 
-                System.out.println("Finviz 캡쳐 완료");
+                System.out.println("Finviz 완료");
 
             } catch (Exception e) {
-                System.out.println("Finviz 실패 → 에러 스샷 저장");
-                page.screenshot(new Page.ScreenshotOptions()
-                        .setPath(Paths.get("screenshots/finviz_error.jpg"))
-                        .setFullPage(true));
+                System.out.println("Finviz 실패");
             }
 
             // ================= TRADINGVIEW =================
             System.out.println("TradingView 접속 중...");
             try {
-                page.navigate("https://www.tradingview.com/chart/?symbol=NASDAQ:NDX&interval=1",
-                        new Page.NavigateOptions().setTimeout(120000));
+                page.navigate("https://www.tradingview.com/chart/?symbol=NASDAQ:NDX&interval=1");
 
-                page.waitForTimeout(15000);
+                // ⭐ 핵심: 차트 canvas 뜨는 순간
+                page.waitForSelector("canvas", new Page.WaitForSelectorOptions().setTimeout(20000));
 
-                page.addStyleTag(new Page.AddStyleTagOptions()
-                        .setContent(".tv-dialog__close, .js-dialog__close, div[class*='overlap-manager'], [class*='dialog'], [class*='overlay'] { display: none !important; }"));
-
-                page.keyboard().press("Escape");
-                page.waitForTimeout(2000);
-
-                page.mouse().move(0, 0);
                 page.screenshot(new Page.ScreenshotOptions()
                         .setPath(Paths.get(tradingviewFile))
                         .setType(ScreenshotType.JPEG)
                         .setQuality(100));
 
-                System.out.println("TradingView 캡쳐 완료");
+                System.out.println("TradingView 완료");
 
             } catch (Exception e) {
                 e.printStackTrace();
