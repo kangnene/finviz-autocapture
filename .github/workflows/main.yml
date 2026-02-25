@@ -1,4 +1,4 @@
-name: Daily Finviz Capture
+name: Daily Market Data Capture
 
 on:
   schedule:
