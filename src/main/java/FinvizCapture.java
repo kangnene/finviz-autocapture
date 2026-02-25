@@ -10,7 +10,7 @@ public class FinvizCapture {
             Page page = browser.newPage();
             
             // Finviz Map 접속 (S&P 500 맵)
-            page.navigate("https://finviz.com/map.ashx");
+            page.navigate("https://finviz.com/map.ashx?t=sec");
             
             // 맵 로딩을 위한 충분한 대기 시간 (7초)
             page.waitForTimeout(7000);
