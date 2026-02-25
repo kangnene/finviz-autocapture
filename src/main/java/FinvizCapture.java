@@ -2,10 +2,19 @@ import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.ScreenshotType;
 import java.nio.file.Paths;
 import java.io.File;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class FinvizCapture {
     public static void main(String[] args) {
         try (Playwright playwright = Playwright.create()) {
+
+            // ✅ 파일명용 현재 시간 생성
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH-mm");
+            String now = LocalDateTime.now().format(formatter);
+
+            String finvizFile = "screenshots/finviz_" + now + ".jpg";
+            String tradingviewFile = "screenshots/tradingview_" + now + ".jpg";
 
             // 1. 브라우저 실행
             Browser browser = playwright.chromium().launch(
@@ -25,7 +34,7 @@ public class FinvizCapture {
 
             // 자동화 흔적 제거
             context.addInitScript(
-                "Object.defineProperty(navigator, 'webdriver', { get: () => undefined })"
+                "Object.defineProperty(navigator, 'webdriver', { get: () -> undefined })"
             );
 
             Page page = context.newPage();
@@ -33,40 +42,35 @@ public class FinvizCapture {
             // 📁 폴더 생성
             new File("screenshots").mkdirs();
 
-            // 🔥 기존 파일 삭제 (항상 새 파일 생성되게)
-            new File("screenshots/finviz.jpg").delete();
-            new File("screenshots/tradingview.jpg").delete();
-            new File("screenshots/debug_tradingview.jpg").delete();
-
             // ==============================
             // 1️⃣ Finviz 캡쳐
             // ==============================
             System.out.println("Finviz 접속 중...");
             try {
-                // 타임아웃을 60초로 늘리고, 페이지가 완전히 로드될 때까지 기다리지 않도록 옵션 추가
-                page.navigate("https://finviz.com/map.ashx?t=sec", new Page.NavigateOptions().setTimeout(60000));
-                
+                page.navigate("https://finviz.com/map.ashx?t=sec",
+                        new Page.NavigateOptions().setTimeout(60000));
+
                 page.waitForTimeout(5000);
                 page.mouse().move(500, 500);
                 page.waitForTimeout(1000);
                 page.mouse().wheel(0, 300);
                 page.waitForTimeout(9000);
-    
-                // 마우스를 화면 밖으로 이동
+
                 page.mouse().move(-100, -100);
                 page.keyboard().press("Escape");
                 page.waitForTimeout(500);
-    
-                // tooltip 강제 제거
+
                 page.addStyleTag(new Page.AddStyleTagOptions()
                     .setContent("*[class*='tooltip'], *[id*='tooltip'] { display: none !important; }"));
-    
+
                 page.screenshot(new Page.ScreenshotOptions()
-                    .setPath(Paths.get("screenshots/finviz.jpg"))
+                    .setPath(Paths.get(finvizFile))
                     .setType(ScreenshotType.JPEG)
                     .setQuality(100)
                     .setFullPage(true));
+
                 System.out.println("Finviz 캡쳐 완료.");
+
             } catch (Exception e) {
                 System.out.println("Finviz 접속 실패(타임아웃), 하지만 계속 진행합니다.");
             }
@@ -79,13 +83,9 @@ public class FinvizCapture {
 
             page.waitForTimeout(15000);
 
-            // 디버그 전체 캡쳐
+            // ✅ debug 캡쳐 제거됨
             page.screenshot(new Page.ScreenshotOptions()
-                .setPath(Paths.get("screenshots/debug_tradingview.jpg"))
-                .setFullPage(true));
-
-            page.screenshot(new Page.ScreenshotOptions()
-                .setPath(Paths.get("screenshots/tradingview.jpg"))
+                .setPath(Paths.get(tradingviewFile))
                 .setType(ScreenshotType.JPEG)
                 .setQuality(100));
 
