@@ -28,6 +28,9 @@ jobs:
       - name: Install Playwright Browsers
         run: mvn exec:java -e -Dexec.mainClass="com.microsoft.playwright.CLI" -Dexec.args="install --with-deps chromium"
 
+      - name: Create screenshots directory
+        run: mkdir -p screenshots
+
       - name: Run Capture
         run: mvn exec:java -Dexec.mainClass="FinvizCapture"
 
