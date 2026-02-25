@@ -45,11 +45,22 @@ public class FinvizCapture {
             // ==============================
             System.out.println("Finviz 접속 중 (NY Time: " + now + ")...");
             try {
-                // 🔥 NETWORKIDLE: 네트워크 요청이 0개가 될 때까지 기다려 데이터 누락 방지
+                // 🔥 네트워크 요청이 0개가 될 때까지 기다려 데이터 누락 방지
                 page.navigate("https://finviz.com/map.ashx?t=sec",
                         new Page.NavigateOptions().setWaitUntil(WaitUntilState.NETWORKIDLE).setTimeout(90000));
 
-                page.waitForTimeout(10000); // 로딩 후 안정화를 위해 10초 더 대기
+                page.waitForTimeout(5000); // 로딩 후 안정화를 위해 5초 더 대기
+
+                // 광고 팝업 레이어와 흐림 효과(Blur)를 강제로 제거
+                page.addStyleTag(new Page.AddStyleTagOptions()
+                    .setContent(
+                        "div[class*='interstitial'], div[class*='overlay'], [id*='pro-popup'] { display: none !important; }" +
+                        "body, .map-container { filter: none !important; pointer-events: auto !important; }"
+                    ));
+                
+                // 혹시 모르니 Escape 한 번 더
+                page.keyboard().press("Escape");
+                page.waitForTimeout(1000);
                 
                 // 봇 감지 우회를 위해 마우스 살짝 움직임
                 page.mouse().move(500, 500);
