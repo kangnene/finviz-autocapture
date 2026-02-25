@@ -45,38 +45,29 @@ public class FinvizCapture {
             // ==============================
             System.out.println("Finviz 접속 중 (NY Time: " + now + ")...");
             try {
-                // 🔥 네트워크 요청이 0개가 될 때까지 기다려 데이터 누락 방지
+                // 🔥 NETWORKIDLE: 네트워크 요청이 0개가 될 때까지 기다려 데이터 누락 방지
                 page.navigate("https://finviz.com/map.ashx?t=sec",
-                        new Page.NavigateOptions().setWaitUntil(WaitUntilState.NETWORKIDLE).setTimeout(90000));
+                        new Page.NavigateOptions().setWaitUntil(WaitUntilState.NETWORKIDLE).setTimeout(60000));
 
-                page.waitForTimeout(5000); // 로딩 후 안정화를 위해 5초 더 대기
+                // 1. 고정 5초 대기 대신, 지도의 캔버스 요소가 나타날 때까지만 대기
+                page.waitForSelector("canvas", new Page.WaitForSelectorOptions().setTimeout(10000));
 
-                // 광고 팝업 레이어와 흐림 효과(Blur)를 강제로 제거
+                // 2. 광고 파괴 CSS 주입 (애니메이션 제거 추가)
                 page.addStyleTag(new Page.AddStyleTagOptions()
                     .setContent(
                         "div[class*='interstitial'], div[class*='overlay'], [id*='pro-popup'] { display: none !important; }" +
-                        "body, .map-container { filter: none !important; pointer-events: auto !important; }"
+                        "body, .map-container { filter: none !important; transition: none !important; }"
                     ));
                 
-                // 혹시 모르니 Escape 한 번 더
+                // 3. 마우스 움직임도 최소화 (안정성만 유지)
+                page.mouse().move(100, 100); 
                 page.keyboard().press("Escape");
-                page.waitForTimeout(1000);
-                
-                // 봇 감지 우회를 위해 마우스 살짝 움직임
-                page.mouse().move(500, 500);
-                page.mouse().wheel(0, 300);
-                page.waitForTimeout(2000);
 
-                page.keyboard().press("Escape");
-                
-                // 툴팁 등 가림막 제거
-                page.addStyleTag(new Page.AddStyleTagOptions()
-                    .setContent("*[class*='tooltip'], *[id*='tooltip'] { display: none !important; }"));
-
+                // 4. 바로 캡처 (불필요한 대기 시간 대폭 삭제)
                 page.screenshot(new Page.ScreenshotOptions()
                     .setPath(Paths.get(finvizFile))
                     .setType(ScreenshotType.JPEG)
-                    .setQuality(100)
+                    .setQuality(90) // 100보다 90이 용량도 작고 빠릅니다. 육안 차이는 거의 없어요.
                     .setFullPage(true));
 
                 System.out.println("Finviz 캡쳐 완료: " + finvizFile);
@@ -95,7 +86,7 @@ public class FinvizCapture {
                 page.navigate("https://www.tradingview.com/chart/?symbol=NASDAQ:NDX&interval=1",
                         new Page.NavigateOptions().setTimeout(120000));
                 
-                page.waitForTimeout(15000);
+                page.waitForSelector(".chart-container", new Page.WaitForSelectorOptions().setTimeout(20000));
 
                 // 팝업 제거
                 page.addStyleTag(new Page.AddStyleTagOptions()
