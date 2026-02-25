@@ -28,10 +28,6 @@ jobs:
       - name: Install Playwright Browsers
         run: mvn exec:java -e -Dexec.mainClass="com.microsoft.playwright.CLI" -Dexec.args="install --with-deps chromium"
 
-      # 🔥 실행 전 기존 파일을 비워줍니다 (폴더를 깔끔하게 유지하려면 선택)
-      - name: Clean old screenshots
-        run: rm -rf screenshots/*.jpg || echo "No files to delete"
-
       - name: Run Capture
         run: mvn exec:java -Dexec.mainClass="FinvizCapture"
 
