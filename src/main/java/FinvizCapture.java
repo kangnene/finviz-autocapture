@@ -80,35 +80,44 @@ public class FinvizCapture {
             // ==============================
             System.out.println("트레이딩뷰 접속 중...");
             try {
-                // 1분 봉 차트 접속 (중복 제거 및 로딩 시간 최적화)
+                // 1분 봉 차트 접속
                 page.navigate("https://www.tradingview.com/chart/?symbol=NASDAQ:NDX&interval=1",
                         new Page.NavigateOptions().setTimeout(120000));
                 
-                // 충분히 로딩 대기
+                // 1. 초기 로딩 대기
                 page.waitForTimeout(15000);
 
-                // 1. 팝업 광고 및 로그인 창 즉시 제거
+                // 2. 팝업 및 방해 요소 제거 (강력하게 삭제)
                 page.addStyleTag(new Page.AddStyleTagOptions()
                     .setContent(".tv-dialog__close, .js-dialog__close, div[class*='overlap-manager'], [class*='dialog'], [class*='overlay'] { display: none !important; }"));
                 page.keyboard().press("Escape");
+                page.waitForTimeout(1000);
 
-                // 2. '1일' 범위 버튼 클릭 시도 (오늘 전체 보기)
+                // 3. '1일' 범위(1D) 클릭 시도 - 3단계 방어
                 try {
-                    if (page.isVisible("button[data-value='1D']")) {
-                        page.click("button[data-value='1D']");
+                    // 전략 A: data-value 속성으로 클릭
+                    Locator btn1D = page.locator("button[data-value='1D'], [data-name='1D']").first();
+                    if (btn1D.isVisible()) {
+                        btn1D.click(new Locator.ClickOptions().setForce(true));
+                        System.out.println("1D 버튼 클릭 성공");
                     } else {
-                        for (int i = 0; i < 8; i++) page.keyboard().press("Control+ArrowDown");
+                        // 전략 B: 텍스트로 찾아서 클릭
+                        page.locator("span:has-text('1D'), div:has-text('1D')").last().click(new Locator.ClickOptions().setForce(true));
                     }
-                    page.waitForTimeout(5000); // 정렬될 시간 넉넉히 주기
                 } catch (Exception e) {
-                    System.out.println("범위 버튼 클릭 실패, 수동 축소 모드 작동");
-                    for (int i = 0; i < 5; i++) page.keyboard().press("Control+ArrowDown");
+                    System.out.println("버튼 클릭 실패, 단축키 및 축소 모드 실행");
+                    // 전략 C: 키보드 단축키 활용 (차트에서 Alt + S + 1 등을 시뮬레이션하거나 축소)
+                    for (int i = 0; i < 10; i++) {
+                        page.keyboard().press("Control+ArrowDown");
+                        page.waitForTimeout(200);
+                    }
                 }
 
-                // 3. 마지막 캡쳐 전 마우스 치우기
+                // 4. 차트가 정렬될 때까지 대기
+                page.waitForTimeout(5000);
+
+                // 5. 마우스 치우기 및 캡쳐
                 page.mouse().move(0, 0);
-                
-                // 캡쳐 실행 (선언해둔 변수 사용)
                 page.screenshot(new Page.ScreenshotOptions()
                     .setPath(Paths.get(tradingviewFile))
                     .setType(ScreenshotType.JPEG)
