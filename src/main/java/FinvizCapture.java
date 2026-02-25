@@ -9,9 +9,10 @@ public class FinvizCapture {
     public static void main(String[] args) {
         try (Playwright playwright = Playwright.create()) {
 
-            // ✅ 파일명용 현재 시간 생성
+            // 미국 동부 시간(America/New_York)으로 시간대 설정
+            java.time.ZonedDateTime nowNY = java.time.ZonedDateTime.now(java.time.ZoneId.of("America/New_York"));
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH-mm");
-            String now = LocalDateTime.now().format(formatter);
+            String now = nowNY.format(formatter);
 
             String finvizFile = "screenshots/finviz_" + now + ".jpg";
             String tradingviewFile = "screenshots/tradingview_" + now + ".jpg";
