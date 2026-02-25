@@ -46,8 +46,8 @@ public class FinvizCapture {
             System.out.println("Finviz 접속 중 (NY Time: " + now + ")...");
             try {
                 // 🔥 NETWORKIDLE: 네트워크 요청이 0개가 될 때까지 기다려 데이터 누락 방지
-                page.navigate("https://finviz.com/map.ashx?t=sec&st=",
-                        new Page.NavigateOptions().setWaitUntil(WaitUntilState.NETWORKIDLE).setTimeout(60000));
+                page.navigate("https://finviz.com/map.ashx?t=sec&st=", 
+                    new Page.NavigateOptions().setTimeout(60000));
 
                 // 1. 고정 5초 대기 대신, 지도의 캔버스 요소가 나타날 때까지만 대기
                 page.waitForSelector("canvas", new Page.WaitForSelectorOptions().setTimeout(10000));
