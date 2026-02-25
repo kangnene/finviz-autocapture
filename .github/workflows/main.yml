@@ -1,0 +1,37 @@
+name: Daily Finviz Capture
+
+on:
+  schedule:
+    # 매일 한국 시간 오전 9시 (UTC 00시)
+    - cron: '0 0 * * *'
+  workflow_dispatch: # 수동 실행 버튼 활성화
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Install Playwright Browsers
+        run: mvn exec:java -e -Dexec.mainClass="com.microsoft.playwright.CLI" -Dexec.args="install --with-deps chromium"
+
+      - name: Run Java Capture
+        run: mvn compile exec:java -Dexec.mainClass="FinvizCapture"
+
+      - name: Commit and Push Image
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add screenshots/*.jpg
+          git commit -m "Daily Finviz Map Captured: $(date +'%Y-%m-%d')" || exit 0
+          git push
