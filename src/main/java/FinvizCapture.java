@@ -18,7 +18,7 @@ public class FinvizCapture {
 
             // 1. 브라우저 실행
             Browser browser = playwright.chromium().launch(
-                new BrowserType.LaunchOptions().setHeadless(true)
+                new BrowserType.LaunchOptions().setHeadless(false)
             );
 
             // 2. 브라우저 컨텍스트 설정
@@ -34,7 +34,11 @@ public class FinvizCapture {
 
             // 자동화 흔적 제거
             context.addInitScript(
-                "Object.defineProperty(navigator, 'webdriver', { get: () => undefined })"
+                """
+                Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+                Object.defineProperty(navigator, 'languages', { get: () => ['en-US','en'] });
+                Object.defineProperty(navigator, 'plugins', { get: () => [1,2,3] });
+                """
             );
 
             Page page = context.newPage();
@@ -48,8 +52,10 @@ public class FinvizCapture {
             System.out.println("Finviz 접속 중...");
             try {
                 page.navigate("https://finviz.com/map.ashx?t=sec",
-                        new Page.NavigateOptions().setTimeout(60000));
-
+                    new Page.NavigateOptions()
+                        .setWaitUntil(LoadState.NETWORKIDLE)
+                        .setTimeout(60000));
+                page.waitForSelector("#map", new Page.WaitForSelectorOptions().setTimeout(30000));
                 page.waitForTimeout(5000);
                 page.mouse().move(500, 500);
                 page.waitForTimeout(1000);
@@ -72,7 +78,11 @@ public class FinvizCapture {
                 System.out.println("Finviz 캡쳐 완료: " + finvizFile);
 
             } catch (Exception e) {
-                System.out.println("Finviz 접속 실패, 하지만 계속 진행합니다.");
+                System.out.println("Finviz 접속 실패, 그래도 스크린샷 저장 시도");
+            
+                page.screenshot(new Page.ScreenshotOptions()
+                    .setPath(Paths.get("screenshots/finviz_error.jpg"))
+                    .setFullPage(true));
             }
 
             // ==============================
