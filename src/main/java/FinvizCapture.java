@@ -35,9 +35,11 @@ public class FinvizCapture {
             page.waitForTimeout(1000);
             page.mouse().wheel(0, 300);  // 살짝 스크롤
             page.waitForTimeout(9000);  // 나머지 로딩 대기 (총 15초 수준)
-            page.mouse().move(1, 1);  // 마우스를 왼쪽 상단으로 이동 (툴팁 제거)
+            page.mouse().move(-100, -100);  // 마우스를 왼쪽 상단으로 이동 (툴팁 제거)
             page.keyboard().press("Escape"); // 혹시 남아있으면 닫기
             page.waitForTimeout(500);
+            page.addStyleTag(new Page.AddStyleTagOptions()
+                .setContent("*[class*='tooltip'], *[id*='tooltip'] { display: none !important; }"));
             
             page.screenshot(new Page.ScreenshotOptions()
                 .setPath(Paths.get("screenshots/finviz_" + date + ".jpg"))
@@ -47,11 +49,16 @@ public class FinvizCapture {
 
             // --- 2. 트레이딩뷰 나스닥 차트 캡쳐 ---
             System.out.println("트레이딩뷰 접속 중...");
-            page.navigate("https://www.tradingview.com/chart/?symbol=NASDAQ%3ANDX");
+            page.navigate("https://www.tradingview.com/chart/ZZfo1QcX/?symbol=NASDAQ%3ANDX");
             
             // 차트 캔버스가 무거우므로 로딩 대기를 15초로 넉넉히 설정
             // 불필요한 레이어(팝업 등)가 로드될 시간을 고려합니다.
             page.waitForTimeout(15000); 
+
+            // 디버그용 전체 캡쳐
+            page.screenshot(new Page.ScreenshotOptions()
+                .setPath(Paths.get("screenshots/debug_tradingview.jpg"))
+                .setFullPage(true));
             
             // 차트 화면이 완전히 렌더링되도록 특정 요소(차트 컨테이너)가 보일 때까지 대기하는 로직을 넣으면 더 정확합니다.
             page.screenshot(new Page.ScreenshotOptions()
