@@ -41,40 +41,62 @@ public class FinvizCapture {
             Page page = context.newPage();
 
             // ==============================
-            // 1️⃣ Finviz 캡쳐 (보안 및 로딩 강화)
+            // 1️⃣ Finviz 캡쳐 (기존 로직 + 강력한 팝업 제거)
             // ==============================
             System.out.println("Finviz 접속 중 (NY Time: " + now + ")...");
             try {
-                // 🔥 NETWORKIDLE: 네트워크 요청이 0개가 될 때까지 기다려 데이터 누락 방지
                 page.navigate("https://finviz.com/map.ashx?t=sec&st=", 
                     new Page.NavigateOptions().setTimeout(60000));
-
-                // 1. 고정 5초 대기 대신, 지도의 캔버스 요소가 나타날 때까지만 대기
+            
+                // 1. [유지] 지도의 캔버스 요소가 나타날 때까지 대기 (데이터 로딩 확인)
                 page.waitForSelector("canvas", new Page.WaitForSelectorOptions().setTimeout(10000));
-
-                // 2. 광고 파괴 CSS 주입 (애니메이션 제거 추가)
+            
+                // 2. [추가] 팝업 요소를 브라우저에서 강제로 삭제 (가장 확실함)
+                // 이미지 속 'X' 버튼이나 모달 배경을 아예 날려버립니다.
+                page.evaluate("() => {" +
+                    "  const targets = ['.modal-container', '[class*=\"interstitial\"]', '[id*=\"pro-popup\"]', '.overlay'];" +
+                    "  targets.forEach(selector => {" +
+                    "    document.querySelectorAll(selector).forEach(el => el.remove());" +
+                    "  });" +
+                    "  document.body.style.filter = 'none';" + // 배경 흐림 제거
+                    "  document.body.style.overflow = 'auto';" + // 스크롤 잠금 해제
+                    "}");
+            
+                // 3. [유지/보강] 마우스 움직임 및 Escape 입력
+                page.mouse().move(100, 100); 
+                page.keyboard().press("Escape");
+            
+                // 4. [추가] 팝업의 'X' 버튼을 직접 찾아서 클릭 시도 (클래스명 보강)
+                try {
+                    // 이미지에서 보이는 우측 상단 X 버튼의 일반적인 패턴들
+                    page.locator("div[class*='close'], svg[class*='close'], .icon-close").first().click(
+                        new Locator.ClickOptions().setTimeout(2000)
+                    );
+                } catch (Exception ignored) {
+                    // 버튼을 못 찾아도 에러로 중단되지 않게 처리
+                }
+            
+                // 5. [유지] 광고 파괴 CSS 주입
                 page.addStyleTag(new Page.AddStyleTagOptions()
                     .setContent(
                         "div[class*='interstitial'], div[class*='overlay'], [id*='pro-popup'] { display: none !important; }" +
                         "body, .map-container { filter: none !important; transition: none !important; }"
                     ));
-                
-                // 3. 마우스 움직임도 최소화 (안정성만 유지)
-                page.mouse().move(100, 100); 
-                page.keyboard().press("Escape");
-
-                // 4. 바로 캡처 (불필요한 대기 시간 대폭 삭제)
+            
+                // 6. [조정] 화면 갱신을 위해 아주 잠깐 대기
+                page.waitForTimeout(500); 
+            
+                // 7. 캡처 실행
                 page.screenshot(new Page.ScreenshotOptions()
                     .setPath(Paths.get(finvizFile))
                     .setType(ScreenshotType.JPEG)
-                    .setQuality(90) // 100보다 90이 용량도 작고 빠릅니다. 육안 차이는 거의 없어요.
+                    .setQuality(90)
                     .setFullPage(true));
-
+            
                 System.out.println("Finviz 캡쳐 완료: " + finvizFile);
-
+            
             } catch (Exception e) {
                 System.out.println("Finviz 접속 실패! 에러: " + e.getMessage());
-                // 실패 원인을 파악하기 위해 현재 화면을 'error' 파일로 남김
                 page.screenshot(new Page.ScreenshotOptions().setPath(Paths.get("screenshots/error_finviz.jpg")));
             }
 
