@@ -16,8 +16,13 @@ public class FinvizCapture {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH-mm");
             String now = nowNY.format(formatter);
 
-            String finvizFile = "screenshots/finviz_" + now + ".jpg";
-            String tradingviewFile = "screenshots/tradingview_" + now + ".jpg";
+            // ✅ 1. 파일명 생성 (날짜를 맨 앞으로)
+            String finvizFile = "screenshots/" + now + "_finviz.jpg";
+            // 결과: screenshots/2026-02-26 14-30_finviz.jpg
+            
+            // ✅ 2. 트레이딩뷰 반복문 안의 파일명 수정
+            String fileName = "screenshots/" + now + "_" + symbol.replace(":", "_") + ".jpg";
+            // 결과: screenshots/2026-02-26 14-30_NASDAQ_NDX.jpg
 
             // 📁 폴더 생성
             new File("screenshots").mkdirs();
@@ -101,48 +106,61 @@ public class FinvizCapture {
             }
 
             // ==============================
-            // 2️⃣ TradingView 캡쳐 (기존 로직 유지 + 타임아웃 보강)
+            // 2️⃣ TradingView 및 개별 종목 캡쳐
             // ==============================
-            System.out.println("트레이딩뷰 접속 중...");
-            try {
-                page.navigate("https://www.tradingview.com/chart/?symbol=NASDAQ:NDX&interval=1",
-                        new Page.NavigateOptions().setTimeout(120000));
-                
-                page.waitForSelector(".chart-container", new Page.WaitForSelectorOptions().setTimeout(20000));
-
-                // 팝업 제거
-                page.addStyleTag(new Page.AddStyleTagOptions()
-                    .setContent(".tv-dialog__close, .js-dialog__close, div[class*='overlap-manager'], [class*='dialog'], [class*='overlay'] { display: none !important; }"));
-                page.keyboard().press("Escape");
-                page.waitForTimeout(1000);
-
-                // '1일' 범위(1D) 클릭 시도 (사용자님의 3단계 방어막 유지)
+            
+            // 📍 매일 변경하고 싶은 종목 리스트를 여기에 넣으세요 (NDX는 기본 포함)
+            String[] stockList = {"NASDAQ:NDX", "TSLA", "NVDA", "AAPL", "MSFT", "GOOGL", "AMZN", "META", "AMD", "NFLX"};
+            
+            for (String symbol : stockList) {
+                System.out.println(symbol + " 차트 접속 중...");
                 try {
-                    Locator btn1D = page.locator("button[data-value='1D'], [data-name='1D']").first();
-                    if (btn1D.isVisible()) {
-                        btn1D.click(new Locator.ClickOptions().setForce(true));
-                    } else {
-                        page.locator("span:has-text('1D'), div:has-text('1D')").last().click(new Locator.ClickOptions().setForce(true));
+                    // URL에 symbol을 동적으로 삽입 (기존 NDX 대신 symbol 변수 사용)
+                    page.navigate("https://www.tradingview.com/chart/?symbol=" + symbol + "&interval=1",
+                            new Page.NavigateOptions().setTimeout(120000));
+                    
+                    // 차트 로딩 대기
+                    page.waitForSelector(".chart-container", new Page.WaitForSelectorOptions().setTimeout(20000));
+            
+                    // 팝업 제거 (공통)
+                    page.addStyleTag(new Page.AddStyleTagOptions()
+                        .setContent(".tv-dialog__close, .js-dialog__close, div[class*='overlap-manager'], [class*='dialog'], [class*='overlay'] { display: none !important; }"));
+                    page.keyboard().press("Escape");
+                    page.waitForTimeout(1000);
+            
+                    // '1일' 범위(1D) 클릭 시도
+                    try {
+                        Locator btn1D = page.locator("button[data-value='1D'], [data-name='1D']").first();
+                        if (btn1D.isVisible()) {
+                            btn1D.click(new Locator.ClickOptions().setForce(true));
+                        } else {
+                            page.locator("span:has-text('1D'), div:has-text('1D')").last().click(new Locator.ClickOptions().setForce(true));
+                        }
+                    } catch (Exception e) {
+                        // 클릭 실패 시 줌 아웃 시도
+                        for (int i = 0; i < 5; i++) {
+                            page.keyboard().press("Control+ArrowDown");
+                            page.waitForTimeout(100);
+                        }
                     }
+            
+                    // 지표나 캔들이 완전히 그려질 시간 확보
+                    page.waitForTimeout(3000); 
+                    page.mouse().move(0, 0);
+            
+                    // 파일명에 종목명 포함 (예: screenshots/TSLA_2024-05-20 10-00.jpg)
+                    String fileName = "screenshots/" + symbol.replace(":", "_") + "_" + now + ".jpg";
+                    
+                    page.screenshot(new Page.ScreenshotOptions()
+                        .setPath(Paths.get(fileName))
+                        .setType(ScreenshotType.JPEG)
+                        .setQuality(100));
+                    
+                    System.out.println(symbol + " 캡쳐 완료: " + fileName);
+            
                 } catch (Exception e) {
-                    for (int i = 0; i < 10; i++) {
-                        page.keyboard().press("Control+ArrowDown");
-                        page.waitForTimeout(200);
-                    }
+                    System.out.println(symbol + " 처리 중 오류 발생: " + e.getMessage());
                 }
-
-                page.waitForTimeout(5000);
-                page.mouse().move(0, 0);
-                page.screenshot(new Page.ScreenshotOptions()
-                    .setPath(Paths.get(tradingviewFile))
-                    .setType(ScreenshotType.JPEG)
-                    .setQuality(100));
-                
-                System.out.println("트레이딩뷰 캡쳐 완료: " + tradingviewFile);
-
-            } catch (Exception e) {
-                System.out.println("트레이딩뷰 오류 발생");
-                e.printStackTrace();
             }
 
             browser.close();
