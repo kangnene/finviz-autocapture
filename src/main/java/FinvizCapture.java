@@ -110,7 +110,7 @@ public class FinvizCapture {
             // ==============================
             
             // 📍 매일 변경하고 싶은 종목 리스트를 여기에 넣으세요 (NDX는 기본 포함)
-            String[] stockList = {"NASDAQ:NDX", "TSLA", "NVDA", "AAPL", "MSFT", "GOOGL", "AMZN", "META", "AMD", "NFLX"};
+            String[] stockList = {"NASDAQ:NDX", "XWEL", "SGN, "RETO", "FRGT", "RCKY", "LRMR", "CONL", "MSTX", "CDIO"};
             
             for (String symbol : stockList) {
                 System.out.println(symbol + " 차트 접속 중...");
