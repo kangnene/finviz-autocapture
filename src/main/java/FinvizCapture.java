@@ -43,40 +43,52 @@ public class FinvizCapture {
             Page page = context.newPage();
 
             // ==============================
-            // 1️⃣ Finviz 캡쳐 (우회 로직 적용)
+            // 1️⃣ Finviz 캡쳐 (강화된 우회 로직)
             // ==============================
-            System.out.println("Finviz 접속 중 (NY Time: " + now + ")...");
+            System.out.println("Finviz 접속 중...");
             try {
-                // LOAD 대신 DOMCONTENTLOADED 사용 (폰트/광고 대기 방지)
-                page.navigate("https://finviz.com/map.ashx?t=sec&st=", 
-                    new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED).setTimeout(60000));
-                
-                // 최소한의 데이터 로딩을 위해 10초 강제 대기
-                page.waitForTimeout(10000); 
-
-                // 팝업 제거 스크립트
+                // 1. 단순 navigate 대신, 응답 코드를 확인하거나 재시도 로직 추가
+                Response response = page.navigate("https://finviz.com/map.ashx?t=sec&st=", 
+                    new Page.NavigateOptions()
+                        .setWaitUntil(WaitUntilState.DOMCONTENTLOADED)
+                        .setTimeout(60000));
+            
+                // 만약 403 Forbidden이나 차단 페이지가 떴을 경우를 대비해 5초 더 대기
+                page.waitForTimeout(5000);
+            
+                // 2. [추가] Cloudflare 체크박스나 대기 화면을 피하기 위해 
+                // 브라우저가 화면을 그릴 시간을 충분히 줌 (15~20초 권장)
+                System.out.println("데이터 로딩 대기 중 (20초)...");
+                page.waitForTimeout(15000); 
+            
+                // 3. [추가] 화면에 아무것도 안 뜰 경우를 대비해 강제로 마우스 클릭/스크롤
+                page.mouse().click(500, 500);
+                page.keyboard().press("End");
+                page.waitForTimeout(2000);
+                page.keyboard().press("Home");
+            
+                // 4. [보강] 팝업 제거 및 배경 흐림 강제 해제
                 page.evaluate("() => {" +
-                    "  const targets = ['.modal-container', '[class*=\"interstitial\"]', '[id*=\"pro-popup\"]', '.overlay'];" +
-                    "  targets.forEach(selector => {" +
-                    "    document.querySelectorAll(selector).forEach(el => el.remove());" +
-                    "  });" +
-                    "  document.body.style.filter = 'none';" +
-                    "  document.body.style.overflow = 'auto';" +
+                    "  const style = document.createElement('style');" +
+                    "  style.innerHTML = ` " +
+                    "    .modal-container, [class*='interstitial'], [id*='pro-popup'], .overlay { display: none !important; } " +
+                    "    body, .map-container { filter: none !important; opacity: 1 !important; } " +
+                    "  `;" +
+                    "  document.head.appendChild(style);" +
                     "}");
-
-                // 캡처 실행 (setFullPage를 false로 설정하여 무한 대기 방지)
+            
+                // 5. 캡처 (Viewport만 찍기)
                 page.screenshot(new Page.ScreenshotOptions()
                     .setPath(Paths.get(finvizFile))
                     .setType(ScreenshotType.JPEG)
-                    .setQuality(80)
+                    .setQuality(90)
                     .setFullPage(false));
                 
-                System.out.println("Finviz 캡쳐 완료: " + finvizFile);
+                System.out.println("Finviz 캡쳐 완료!");
             } catch (Exception e) {
-                System.out.println("Finviz 실패: " + e.getMessage());
-                try {
-                    page.screenshot(new Page.ScreenshotOptions().setPath(Paths.get("screenshots/error_finviz.jpg")));
-                } catch (Exception ignored) {}
+                System.out.println("Finviz 실패 원인: " + e.getMessage());
+                // 실패 시 현재 화면이라도 찍어서 무엇이 막고 있는지 확인 (디버깅용)
+                page.screenshot(new Page.ScreenshotOptions().setPath(Paths.get("screenshots/debug_finviz.jpg")));
             }
 
             // ==============================
