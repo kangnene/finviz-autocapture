@@ -8,7 +8,7 @@ on:
 
 jobs:
   capture:
-    runs-on: ubuntu-22.04
+    runs-on: windows-latest
     permissions:
       contents: write
     steps:
@@ -26,7 +26,7 @@ jobs:
         run: mvn install -DskipTests
 
       - name: Install Playwright Browsers
-        run: mvn exec:java -e -Dexec.mainClass="com.microsoft.playwright.CLI" -Dexec.args="install --with-deps chromium"
+        run: mvn exec:java -e -Dexec.mainClass="com.microsoft.playwright.CLI" -Dexec.args="install --with-deps"
 
       - name: Create screenshots directory
         run: mkdir -p screenshots
