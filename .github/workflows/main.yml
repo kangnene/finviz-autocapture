@@ -3,7 +3,7 @@ name: Daily Market Data Capture
 on:
   schedule:
     # 매일 한국 시간 오전 11시 (UTC 02시)
-    - cron: '0 2 * * *'
+    - cron: '17 2 * * *'
   workflow_dispatch:
 
 jobs:
