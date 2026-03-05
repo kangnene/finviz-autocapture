@@ -25,7 +25,13 @@ public class FinvizCapture {
 
             // 2. 브라우저 실행
             Browser browser = playwright.chromium().launch(
-                new BrowserType.LaunchOptions().setHeadless(true)
+                new BrowserType.LaunchOptions()
+                    .setHeadless(true)
+                    .setArgs(java.util.Arrays.asList(
+                        "--disable-blink-features=AutomationControlled", // 자동화 흔적 제거
+                        "--disable-web-security",
+                        "--allow-running-insecure-content"
+                    ))
             );
 
             // 3. 우회 설정 (헤더 및 언어 설정 추가)
