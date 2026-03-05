@@ -1,44 +1,87 @@
 name: Daily Market Data Capture
 
+
+
 on:
+
   schedule:
+
     # 매일 한국 시간 오전 11시 (UTC 02시)
+
     - cron: '17 2 * * *'
+
   workflow_dispatch:
 
+
+
 jobs:
+
   capture:
-    runs-on: windows-latest
+
+    runs-on: ubuntu-22.04
+
     permissions:
+
       contents: write
+
     steps:
+
       - name: Checkout code
+
         uses: actions/checkout@v4
 
+
+
       - name: Set up JDK 17
+
         uses: actions/setup-java@v4
+
         with:
+
           java-version: '17'
+
           distribution: 'temurin'
+
           cache: maven
 
+
+
       - name: Build Project
+
         run: mvn install -DskipTests
 
+
+
       - name: Install Playwright Browsers
-        run: mvn exec:java -e -Dexec.mainClass="com.microsoft.playwright.CLI" -Dexec.args="install --with-deps"
+
+        run: mvn exec:java -e -Dexec.mainClass="com.microsoft.playwright.CLI" -Dexec.args="install --with-deps chromium"
+
+
 
       - name: Create screenshots directory
+
         run: mkdir -p screenshots
 
+
+
       - name: Run Capture
+
         run: mvn exec:java -Dexec.mainClass="FinvizCapture"
 
+
+
       - name: Commit and Push
+
         run: |
+
           git config --global user.name "GitHub Action"
+
           git config --global user.email "action@github.com"
+
           # 🔥 -A 옵션을 써야 새로 생성된 날짜별 파일이 모두 인식됩니다.
+
           git add -A screenshots/
+
           git commit -m "Daily update $(date)" || echo "No changes"
+
           git push
