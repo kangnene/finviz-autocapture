@@ -107,17 +107,38 @@ public class FinvizCapture {
                 
                 // 차트 로딩을 위해 15초 강제 대기
                 page.waitForTimeout(15000);
-
+            
+                // '1일' 범위(1D) 클릭 시도 (사용자님의 3단계 방어막 유지)
+                try {
+                    Locator btn1D = page.locator("button[data-value='1D'], [data-name='1D']").first();
+                    if (btn1D.isVisible()) {
+                        btn1D.click(new Locator.ClickOptions().setForce(true));
+                    } else {
+                        page.locator("span:has-text('1D'), div:has-text('1D')").last().click(new Locator.ClickOptions().setForce(true));
+                    }
+                } catch (Exception e) {
+                    for (int i = 0; i < 10; i++) {
+                        page.keyboard().press("Control+ArrowDown");
+                        page.waitForTimeout(200);
+                    }
+                }
+            
+                // 1D 버튼 클릭 후 잠시 대기
+                page.waitForTimeout(5000); // 대기 시간을 충분히 주어야 1D 데이터가 렌더링됨
+            
+                // 캡처 실행
                 page.screenshot(new Page.ScreenshotOptions()
                     .setPath(Paths.get(tradingviewFile))
                     .setType(ScreenshotType.JPEG)
-                    .setFullPage(false)); 
+                    .setQuality(90) // 품질은 90으로 설정하여 고화질을 유지하면서 파일 크기는 줄임
+                    .setFullPage(false)
+                    .setDeviceScaleFactor(1.5));  // 해상도를 1.5배로 향상시킴
                 
                 System.out.println("트레이딩뷰 캡쳐 완료: " + tradingviewFile);
             } catch (Exception e) {
                 System.out.println("트레이딩뷰 실패: " + e.getMessage());
             }
-
+            
             browser.close();
 
         } catch (Exception e) {
