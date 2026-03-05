@@ -46,7 +46,10 @@ public class FinvizCapture {
             System.out.println("Finviz 접속 중 (NY Time: " + now + ")...");
             try {
                 page.navigate("https://finviz.com/map.ashx?t=sec&st=", 
-                    new Page.NavigateOptions().setTimeout(60000));
+                    new Page.NavigateOptions()
+                        .setWaitUntil(WaitUntilState.DOMCONTENTLOADED) // 완벽한 로딩 대신 DOM 로드만 확인
+                        .setTimeout(90000)); // 시간을 90초로 더 늘림
+                page.waitForTimeout(5000); // 일단 5초간 무조건 대기
             
                 // 1. [유지] 지도의 캔버스 요소가 나타날 때까지 대기 (데이터 로딩 확인)
                 page.waitForSelector("canvas", new Page.WaitForSelectorOptions().setTimeout(10000));
